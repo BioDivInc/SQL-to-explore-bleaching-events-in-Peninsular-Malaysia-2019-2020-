@@ -1,4 +1,4 @@
-This project aimed to develop my SQL skills using MS SQL Server and coral data collected in Malaysia in 2019/2020 by Szereday et al., 2024 <a href="https://doi.org/10.1007/s00227-024-04495-2" >(click me)</a>, investigating the effects of back-to-back thermal stress events on coral health (i.e., bleaching response).
+This first project aimed to develop my SQL skills using MS SQL Server and coral data collected in Malaysia in 2019/2020 by Szereday et al., 2024 <a href="https://doi.org/10.1007/s00227-024-04495-2" >(click me)</a>, investigating the effects of back-to-back thermal stress events on coral health (i.e., bleaching response).
 
 The dataset includes 3755 rows with following columns:
 Year,
