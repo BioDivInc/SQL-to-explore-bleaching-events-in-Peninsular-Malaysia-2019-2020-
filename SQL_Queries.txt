@@ -1,0 +1,271 @@
+1) Is there a difference in bleaching scores depending on water depth (i.e., 6 m vs. 12 m sampled corals)? 
+--Investigates the general notion of a difference in bleaching depending on water depth alone.--
+SELECT DISTINCT --select only distinct values as we only need the average for two depths and not all entries.--
+	[Depth (m)],
+	ROUND(AVG([Bleaching Score]) OVER (PARTITION BY [Depth (m)]),1) AS [AVG_Bleaching_Score] --add round() function to round the output to one decimal place.--
+FROM [SQL_Project].[dbo].['All Data$']
+ORDER BY [Depth (m)] ASC;
+
+
+OUTPUT:
+Depth (m)	AVG_Bleaching_Score
+6	2.1
+12	2.4
+
+There is only a marginal difference between the average bleaching scores at 6 and 12 meters water depth. The averaging function does not account for Year, Site, Morphotaxa. To investigate a possible difference between Genus and Form (i.e., Morphotaxa), an adjustment is in order.
+
+
+
+
+2) Is there a difference between genera or rather [Morphotaxa]?
+--Site, Year, (Genus, Form) Morphotaxa might make a difference that can be accounted for by adjusting the arguments within the 'partition by' clause. As the output would be 633 rows, I reduced the output to the top 20 worst performers.--
+SELECT DISTINCT TOP 20 --select only for the top 20 entries, ordered by the average bleaching score based on following parameters in descending order.--
+	[Year],	
+	[Site],
+	[Depth (m)],
+	[Morphotaxa],
+	ROUND(AVG([Bleaching Score]) OVER (PARTITION BY [Depth (m)], [Year], [Site], [Morphotaxa]), 1) AS [AVG_Bleaching_Score] --add round() function to round the output to one decimal place, as more do not add any further value to the bleaching score.--
+FROM [SQL_Project].[dbo].['All Data$']
+ORDER BY [AVG_Bleaching_Score] DESC;
+
+OUTPUT top 20 worst performers:
+Year	Site	Depth (m)	Morphotaxa	AVG_Bleaching_Score
+2019	BB	6	HelioporaColumnar	6
+2019	BB	6	PoritesEncrusting	6
+2019	BB	12	AstreoporaEncrusting	6
+2019	BB	12	FavitesEncrusting	6
+2019	BB	12	HelioporaColumnar	6
+2019	SBHR	6	EchinoporaBranching	6
+2019	SBHR	6	PoritesEncrusting	6
+2019	SBSR	6	PachyserisEncrusting	6
+2019	SBSR	6	PoritesEncrusting	6
+2019	TT	6	HelioporaColumnar	6
+2019	TT	6	HydnophoraEncrusting	6
+2019	SBHR	12	PavonaFoliose	5.6
+2019	SBSR	6	EchinoporaBranching	5.3
+2020	BB	6	HelioporaColumnar	5.1
+2019	BB	6	GoniastreaEncrusting	5
+2019	TT	6	GoniastreaSubmassive	5
+2019	TT	12	AcroporaDigitate	5
+2019	TT	12	PocilloporaCorymbose	5
+2020	BB	12	AcroporaCorymbose	5
+2019	TT	12	CyphastreaEncrusting	4.9
+
+What are the top 20 best performers then? That can be displayed simply by changing the last line of code to: ORDER BY [AVG_Bleaching_Score] ASC;
+
+OUTPUT top 20 best performers:
+Year	Site	Depth (m)	Morphotaxa	AVG_Bleaching_Score
+2019	BB	6	AcroporaCorymbose	1
+2019	BB	6	AcroporaDigitate	1
+2019	BB	6	AcroporaTabular	1
+2019	BB	6	CyphastreaEncrusting	1
+2019	BB	6	DipsastraeaEncrusting	1
+2019	BB	6	GalaxeaEncrusting	1
+2019	BB	6	GoniastreaSubmassive	1
+2019	BB	6	MerulinaEncrusting	1
+2019	BB	6	PachyserisEncrusting	1
+2019	BB	6	PavonaFoliose	1
+2019	BB	12	AcroporaDigitate	1
+2019	BB	12	AcroporaHispidose	1
+2019	BB	12	DipsastraeaEncrusting	1
+2019	BB	12	GalaxeaEncrusting	1
+2019	BB	12	GoniastreaSubmassive	1
+2019	BB	12	LeptoriaSubmassive	1
+2019	BB	12	MontiporaVase	1
+2019	BB	12	PlatygyraEncrusting	1
+2019	SBHR	6	AcroporaArborescent	1
+2019	SBHR	6	DipsastraeaSubmassive	1
+
+But what are the most and least susceptible genera? The tables above include not only the site and depth but also the form, which makes it harder to read, when only interested in the performance of each [Genus] per year.
+
+SELECT DISTINCT 
+	[Year],	
+	[Genus],
+	ROUND(AVG([Bleaching Score]) OVER (PARTITION BY [Genus], [Year]),1) AS AVG_Bleaching_Score
+FROM [SQL_Project].[dbo].['All Data$']
+ORDER BY [AVG_Bleaching_Score] DESC;
+
+OUTPUT:
+Year	Genus	AVG_Bleaching_Score
+2019	Heliopora	5.1
+2019	Astreopora	4.5
+2019	Goniastrea	4.3
+2019	Pachyseris	4.3
+2019	Cyphastrea	4
+2019	Herpolitha	4
+2019	Pavona	3.9
+2019	Echinopora	3.8
+2019	Favites	3.2
+2020	Heliopora	3.2
+2019	Fungia	3
+2019	Hydnophora	3
+2019	Pocillopora	3
+2019	Porites	3
+2019	Merulina	2.6
+2019	Platygyra	2.4
+2020	Pavona	2.3
+2019	Acropora	2
+2019	Sandolitha	2
+2020	Astreopora	2
+2020	Platygyra	2
+2019	Dipsastraea	1.9
+2019	Montipora	1.9
+2020	Goniastrea	1.8
+2020	Pocillopora	1.8
+2020	Porites	1.7
+2019	Oulophyllia	1.6
+2019	Diploastrea	1.5
+2020	Cyphastrea	1.5
+2020	Diploastrea	1.5
+2020	Echinopora	1.4
+2020	Favites	1.4
+2020	Fungia	1.4
+2020	Hydnophora	1.4
+2020	Leptastrea	1.4
+2019	Leptastrea	1.3
+2019	Lobophyllia	1.3
+2020	Dipsastraea	1.2
+2020	Galaxea	1.2
+2020	Lobophyllia	1.2
+2020	Montipora	1.2
+2019	Galaxea	1.1
+2019	Psammocora	1.1
+2020	Acropora	1.1
+2019	Leptoria	1
+2019	Physiogyra	1
+2019	Stylocoenellia	1
+2020	Alveopora	1
+2020	Blastomussa	1
+2020	Coscinararea	1
+2020	Goniopora	1
+2020	Herpolitha	1
+2020	Leptoria	1
+2020	Merulina	1
+2020	Oulophyllia	1
+2020	Pachyseris	1
+2020	Physiogyra	1
+2020	Psammocora	1
+2020	Sandolitha	1
+2020	Stylocoenellia	1
+
+This table suggests that there might be differences, within and across genus, between Year 2019 and 2020. 
+
+
+
+
+3)Is there a difference between Year 2019 and Year 2020? If so, which [Morphotaxa] displayed the highest difference between the back-to-back bleaching events? Here, a negative value represents a decline in coral health from Year 2019 to 2020.
+
+--The data from 2019 (1882 rows) and 2020 (1873 rows) IS NOT same sized. As I want to compare the same genus / morphotaxa entry across year, a continuous ID within Morphotaxa can help, using the row_number() function within a CTE for each year.--
+--Create a table where to store the output in.--
+CREATE TABLE [Bleaching Score Difference] (
+		[Site] VARCHAR(50),
+		[Depth (m)] INTEGER,
+		[Morphotaxa] VARCHAR(50),
+		[Bleaching Score 2019] INTEGER,
+		[Bleaching Score 2020] INTEGER,
+		[Bleaching Score difference between 2019 and 2020] INTEGER
+		)
+
+--simplify the approach of separate columns for the bleaching scores given in year 2019 and 2020 as well as assigned IDs to compare the same IDs within parameters with one another.--
+WITH Data_2019_Ranked AS (
+    SELECT 	
+		[Site],
+		[Depth (m)],
+		[Morphotaxa],
+		[Bleaching Score] AS [Bleaching Score 2019],
+           ROW_NUMBER() OVER (
+               PARTITION BY [Morphotaxa], [Site], [Depth (m)]
+               ORDER BY [Bleaching Score] ASC
+           ) AS ID
+    FROM [SQL_Project].[dbo].['All Data$']
+	WHERE [Year] = 2019
+),
+Data_2020_Ranked AS (
+    SELECT 
+		[Site],
+		[Depth (m)],
+		[Morphotaxa],
+		[Bleaching Score] AS [Bleaching Score 2020],
+           ROW_NUMBER() OVER (
+               PARTITION BY [Morphotaxa], [Site], [Depth (m)] 
+               ORDER BY [Bleaching Score] ASC
+           ) AS ID
+    FROM [SQL_Project].[dbo].['All Data$']
+	WHERE [Year] = 2020
+)
+--insert the output in the created table.--
+INSERT INTO  [SQL_Project].[dbo].[Bleaching Score Difference] (
+		[Site],
+		[Depth (m)],
+		[Morphotaxa],
+		[Bleaching Score 2019],
+		[Bleaching Score 2020],
+		[Bleaching Score difference between 2019 and 2020]
+		)
+--use aliases to clean up the data a bit and avoid duplicate columns (e.g., Form 2019, Form 2020).--
+SELECT 
+    d19.[Site], 
+    d19.[Depth (m)], 
+    d19.[Morphotaxa],
+    d19.[Bleaching Score 2019], 
+    d20.[Bleaching Score 2020],
+    (d19.[Bleaching Score 2019] - d20.[Bleaching Score 2020]) AS [Bleaching Score difference between 2019 and 2020]
+FROM Data_2019_Ranked d19
+JOIN Data_2020_Ranked d20
+ON d19.[Morphotaxa] = d20.[Morphotaxa]
+AND d19.[Depth (m)] = d20.[Depth (m)]
+AND d19.[Site]=d20.[Site]
+AND d19.ID = d20.ID -- Ensures correct pairing of replicates
+ORDER BY [Bleaching Score difference between 2019 and 2020] ASC, 
+         d19.[Site], d19.[Depth (m)], d19.[Morphotaxa];
+
+--select top 20 distinct morphotaxa with the highest decline in health between 2019 and 2020.--
+SELECT DISTINCT TOP 20*
+FROM [SQL_Project].[dbo].[Bleaching Score Difference]
+ORDER BY [Bleaching Score difference between 2019 and 2020] ASC;
+
+OUTPUT distinct top 20 highest decline in health:
+Site	Depth (m)	Morphotaxa	Bleaching Score 2019	Bleaching Score 2020	Bleaching Score difference between 2019 and 2020
+BB	6	LeptastreaEncrusting	1	6	-5
+BB	6	PoritesEncrusting with upgrowth	1	6	-5
+SBHR	6	PavonaFoliose	1	6	-5
+SBHR	12	PoritesEncrusting with upgrowth	1	6	-5
+SBHR	6	FungiaSolitary	2	6	-4
+SBHR	6	PavonaFoliose	1	5	-4
+BB	6	PocilloporaCorymbose	2	5	-3
+BB	6	PoritesEncrusting with upgrowth	1	3	-2
+BB	12	GalaxeaEncrusting	1	3	-2
+BB	12	PocilloporaCorymbose	1	3	-2
+SBHR	6	PavonaFoliose	1	3	-2
+SBHR	6	PavonaFoliose	4	6	-2
+SBHR	12	PoritesEncrusting with upgrowth	1	3	-2
+TT	6	GoniastreaEncrusting	1	3	-2
+TT	6	LeptastreaEncrusting	1	3	-2
+BB	6	FavitesEncrusting	1	2	-1
+BB	6	GalaxeaEncrusting	1	2	-1
+BB	6	MontiporaVase	2	3	-1
+BB	6	PocilloporaCorymbose	2	3	-1
+BB	6	PoritesEncrusting with upgrowth	1	2	-1
+
+OUTPUT distinct top 20 highest increase in health:
+Site	Depth (m)	Morphotaxa	Bleaching Score 2019	Bleaching Score 2020	Bleaching Score difference between 2019 and 2020
+BB	6	GoniastreaEncrusting	6	1	5
+BB	6	HelioporaColumnar	6	1	5
+BB	12	CyphastreaEncrusting	6	1	5
+BB	12	DipsastraeaSubmassive	6	1	5
+BB	12	FavitesEncrusting	6	1	5
+BB	12	HelioporaColumnar	6	1	5
+BB	12	MerulinaEncrusting	6	1	5
+BB	12	PoritesEncrusting	6	1	5
+SBHR	6	EchinoporaBranching	6	1	5
+SBHR	6	PocilloporaCorymbose	6	1	5
+SBHR	12	DipsastraeaSubmassive	6	1	5
+SBHR	12	PavonaFoliose	6	1	5
+SBSR	6	FungiaSolitary	6	1	5
+SBSR	6	PavonaFoliose	6	1	5
+SBSR	6	PocilloporaCorymbose	6	1	5
+TT	6	FavitesEncrusting	6	1	5
+TT	6	HelioporaColumnar	6	1	5
+TT	6	HydnophoraEncrusting	6	1	5
+TT	6	PoritesEncrusting	6	1	5
+TT	12	CyphastreaEncrusting	6	1	5
